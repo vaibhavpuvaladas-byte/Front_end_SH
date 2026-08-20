@@ -1,0 +1,402 @@
+# AI Agent Instructions: Gigly Frontend Implementation
+
+## 1. Project Overview
+**Gigly** is a blockchain-powered escrow platform designed for the gig economy. It allows clients and freelancers to transact in USDC without touching crypto wallets or paying gas fees directly.
+
+## 2. Frontend Technology Stack
+- **Framework:** Next.js + React
+- **Web3 Integration:** Thirdweb React SDK v5
+- **Hosting:** Vercel or Netlify (Free Tier)
+- **Key External APIs:** `open.er-api.com` (for INR conversion fallback)
+
+## 3. UI/UX Design Requirements
+- **Vibe:** Clean, professional freelance-marketplace (similar to Fiverr/Upwork), with a Stripe-like fintech tone.
+- **Terminology:** ABSOLUTELY NO blockchain jargon (hide wallet addresses, gas, transaction hashes). Use plain English like "Payment secured", "Processing", "Paid".
+- **Color Palette:** Neutral base (white/light gray) with a teal/green accent for primary actions. Status colors: Green (success/released), Amber (pending), Red/Coral (disputed).
+- **Typography:** Modern, clean sans-serif. Use sentence case (no all-caps).
+- **Components:** Rounded cards (12px radius, soft 1px borders, no heavy shadows). Job statuses should be pills/badges.
+
+## 4. Authentication & Wallet (Thirdweb)
+- Implement `ConnectButton` from Thirdweb.
+- **Login Methods:** Google OAuth + Email OTP (in-app wallet).
+- **Wallet Setup:** Enable ERC-4337 Account Abstraction (`executionMode: "EIP4337"`) and sponsor gas (`sponsorGas: true` via Thirdweb Paymaster).
+- **Post-Login:** Show a role picker ("I'm hiring" vs "I'm working") and save this choice against the wallet address.
+
+## 5. User Flows & Dashboards
+
+### A. Client Path
+- **Dashboard:** Two main tabs: "Browse freelancers" and "My jobs". Top metric cards for active jobs, total spent, etc.
+- **Browse Tab:** Static directory of freelancers (avatar, name, skill tag, hidden wallet address).
+- **Fund Job:** Selecting a freelancer opens a form to enter task title and USDC amount -> triggers `createJob` contract call (gasless).
+- **Review Tab:** Shows submitted work with options to "Approve" (`approveAndRelease`) or "Dispute" (`raiseDispute`).
+
+### B. Freelancer Path
+- **Dashboard:** Two main tabs: "Incoming tasks" and "Earnings".
+- **Task Visibility:** Must be near-instant and event-driven. Listen for `JobCreated` events where `freelancer == myAddress`.
+- **Submit Work:** "Submit work" button calls `submitWork(jobId)`. This starts a 24-hour review countdown.
+- **Claim Payment:** Button appears only after 24h of no client action, calling `claimAfterWindow`.
+- **Currency Dashboard:** Shows USDC balance live, converting to EUR (via Chainlink on-chain) and INR (via fallback API). Must refresh every 30 seconds.
+
+### C. Admin Path
+- **Dashboard:** Internal view listing disputed jobs.
+- **Resolution:** Arbiter calls `resolveDispute` to split funds.
+
+## 6. Development Phasing for Frontend
+1. **Setup & Auth:** Next.js scaffolding, implement Thirdweb ConnectButton, confirm gasless tx.
+2. **Client Dash:** Build static directory, "Fund a job" flow, and job list via event filters.
+3. **Freelancer Dash:** Build incoming tasks list, submit work flow, and the currency dashboard (30s refresh).
+4. **Review/Dispute Flow:** Add approve/dispute UI for clients and claim UI for freelancers.
+5. **Polish:** Remove raw hex addresses, ensure human-readable statuses, handle empty/error states (e.g., stale oracle data, wallet connect failure).
+
+Conversation with Gemini
+can u extract all the info from this and explain me all the frontend parts and requirements accordingly , also extract all the text from this in the from of normal txt , and create an agent.md file for this
+
+Your text and markdown files are ready:
+
+TXT icon
+Gigly_Master_Project_Doc
+ TXT
+Open
+MD icon
+agent
+ MD
+Open
+Here is the extracted information and a detailed breakdown of the frontend components and requirements for the Gigly project based on the documentation provided:
+
+1. Frontend Technology Stack
+Frameworks & Libraries: The frontend will be built using Next.js and React.
+PDF
+
+Web3 Integration: You are required to use the Thirdweb React SDK v5, utilizing hooks and components like ConnectButton, useActiveAccount, and useReadContract.
+PDF
+
+Hosting: The application should be hosted on the free tiers of either Vercel or Netlify.
+PDF
+
+External APIs: For currency conversion falling outside of Chainlink's coverage, you will use open.er-api.com as a free, off-chain fallback rate API (specifically for INR).
+PDF
+
+2. UI/UX Design Requirements
+Vibe & Tone: The design should feel clean and professional, resembling a freelance marketplace like Fiverr or Upwork, mixed with a clean fintech tone inspired by Stripe.
+PDF
+
+Terminology: All blockchain terminology (such as wallet addresses, gas, and transaction hashes) must be hidden by default. The app must use plain language like "Payment secured", "Processing", or "Paid".
+PDF
++ 1
+
+Color Palette: Use a neutral base of white/light gray surfaces with a teal or green accent color to match the "Gigly" name. Status colors should map to green for released/success, amber for pending review, and red/coral for disputed.
+PDF
++ 1
+
+Typography: Use a clean, modern sans-serif font matching contemporary SaaS dashboards. All labels must use sentence case with no all-caps text.
+PDF
++ 1
+
+Components: Use rounded cards with a 12px radius, soft 1px borders, and no heavy shadows. The freelancer directory should feature an avatar circle, name, and skill tag in a "Fiverr-style" listing card. Job statuses are to be displayed as colored pills or badges.
+PDF
++ 2
+
+Layout: Use a responsive grid that collapses into a single-column stack on mobile devices. Each dashboard must feature metric cards at the top (e.g., active jobs, total earned).
+PDF
++ 1
+
+3. Authentication & Wallet Flow
+Login Flow: Users will log in via Google OAuth or email OTP through a Thirdweb in-app wallet. There is no requirement for a seed phrase or a separate wallet app.
+PDF
++ 1
+
+Account Abstraction: The wallet uses ERC-4337 Account Abstraction (EIP4337 execution mode) and a Thirdweb Paymaster with sponsorGas: true.
+PDF
+
+Role Picker: Upon entry, users pick their role ("I'm hiring" or "I'm working") which is then stored against their wallet address for future sessions.
+PDF
+
+4. Application Workflows (Frontend)
+Client Dashboard:
+
+Features a "Browse freelancers" tab displaying a static demo directory, and a "My jobs" list.
+PDF
+
+When a client selects a freelancer, they enter the task title and USDC amount, which triggers the gasless createJob function.
+PDF
+
+A "Needs review" tab will allow the client to click "Approve" (calling approveAndRelease) or "Dispute" (calling raiseDispute).
+PDF
+
+Freelancer Dashboard:
+
+Features an "Incoming tasks" tab that must update in near-real-time by listening to JobCreated events (without polling a database).
+PDF
+
+Freelancers have a "Submit work" button which calls submitWork and starts a 24-hour countdown.
+PDF
+
+If 24 hours pass without client action, a "Claim payment" button enables, triggering claimAfterWindow.
+PDF
+
+Currency Dashboard: Displays the freelancer's USDC balance live in INR and EUR. This must refresh every 30 seconds. A visual on-chain badge should distinguish the EUR oracle-sourced figure from the fallback API data.
+PDF
++ 2
+
+Admin/Arbiter View: An internal screen listing all "Disputed" jobs where the arbiter can resolve the dispute and split funds.
+PDF
+
+5. Frontend State Handling
+Empty States: Display "No active jobs yet" or "No freelancers found" when applicable.
+PDF
+
+Error States: You must handle and gracefully display wallet connect failures, insufficient USDC balances, rejected transactions, and stale oracle data warnings.
+PDF
+
+Success States: Display clear messages like "Job funded" or "Payment released".
+PDF
+
+
+
+
+Gemini is AI and can make mistakes.
+
+Defining Frontend Structure
+Gigly Master Project Documentation
+ | 1
+
+1. Product Requirements Document (PRD)
+ | 1
+
+2. Technical Requirements Document (TRD)
+ | 2
+
+3. App Flow Document
+ | 3
+
+4. UI/UX Design Brief
+ | 3
+
+5. Backend Schema Document
+ | 4
+
+6. Implementation Plan
+ | 4
+
+Gigly
+Master Project Documentation
+A blockchain-powered escrow platform that lets clients and freelancers transact across borders without
+wallets, gas fees, or currency confusion. Built on Polygon with Account Abstraction, Chainlink oracles, and
+USDC settlement.
+This single document combines all 6 pre-build documents (PRD, TRD, App Flow, UI/UX Brief, Backend
+Schema, Implementation Plan) so it can be handed directly to an Al coding tool.
+
+1. Product Requirements Document (PRD)
+App name: Gigly
+One-line idea: A gig-economy escrow platform where clients fund jobs in USDC, freelancers get paid
+automatically or after review, and neither side ever needs to touch a crypto wallet directly.
+Target users - Clients - individuals or small businesses hiring freelancers, often across borders, who want
+payment security without slow bank wires or high platform fees. Freelancers - gig workers, especially
+in markets like India, who want fast, low-fee payouts and a clear view of what their earnings are worth in
+local currency. Arbiter (platform team)
+resolves disputes when a client and freelancer disagree on
+delivered work.
+Problem being solved Cross-border freelance payments are slow, expensive (wire fees, FX markups),
+and offer little protection if a client refuses to pay or a freelancer doesn't deliver. - Freelancers in emerging
+markets are especially exposed to currency volatility and delayed settlement. - Crypto/blockchain rails could
+fix this, but are normally too technical for non-crypto-native users (seed phrases, gas fees, wallet apps).
+Core features (MVP) Login via Gmail or email no seed phrase, no wallet app, no gas tokens ever
+required - Client dashboard: browse a directory of freelancers, assign and fund a task - Freelancer dash-
+board: see incoming tasks in real time, submit completed work - Optimistic escrow: 24-hour review window,
+client can approve early or let it auto-release - Dispute path: client can freeze a payment inside the window;
+platform arbiter resolves the split Real-time currency dashboard: freelancer's USDC balance shown live
+in INR and EUR
+User roles: Client, Freelancer, Arbiter (internal/admin only)
+User stories - As a client, I want to fund a job so the freelancer knows I'm serious and payment is guaranteed
+on delivery. - As a client, I want to review submitted work and only release payment once I'm satisfied, or
+dispute it if I'm not. As a freelancer, I want to see a task appear the moment a client assigns it, without
+1
+checking email or a separate system. As a freelancer, I want to know exactly what my USDC balance is
+worth in my home currency, live. - As a freelancer, I want to be paid automatically if the client simply doesn't
+respond in time.
+Success metrics - Successful job completion rate (released / total funded jobs) - Dispute rate (disputed /
+total jobs) - Median time from work submission to payment release - Signups per role (clients vs freelancers)
+MVP scope - Single chain: Polygon Amoy testnet only - Single settlement asset: self-deployed Mock USDC
+- Login: Gmail OAuth + email OTP (Thirdweb in-app wallet) - Lump-sum escrow jobs (milestone support
+included in contract, optional in UI) - Manual arbiter dispute resolution (single trusted address) - Currency
+dashboard: Chainlink EUR/USD (real oracle) + free FX API for INR (documented gap, no Chainlink INR
+feed currently exists) - All infrastructure on free tiers no paid services anywhere in the demo
+Explicitly not in v1 Real fiat on-ramp/off-ramp (Transak/MoonPay integration) Cross-chain bridging
+(accepting ETH, MON, or other chain assets) - Soulbound reputation tokens - Streaming/milestone-based
+continuous payments (Superfluid) - KYC/compliance routing - Mainnet deployment
+
+2. Technical Requirements Document (TRD)
+Layer
+ | Choice
+ | Notes
+
+Blockchain
+Smart contracts
+ | Polygon Amoy testnet
+Polygon
+Mainnet (Phase 2)
+Solidity 0.8.24, Hardhat,
+OpenZeppelin
+ | Low fees, EVM-compatible
+ReentrancyGuard, Ownable,
+IERC20/SafeERC20
+
+Oracles
+ | Chainlink
+ | EUR/USD confirmed live on
+
+Wallets / Auth
+ | Aggregator V3Interface
+Thirdweb in-app wallet,
+ERC-4337 Account Abstraction
+ | Amoy at
+0x73366Fe0AA0Ded304479862808e02506FE556a98
+no confirmed INR pair on any
+Polygon network
+Google OAuth + email OTP;
+executionMode: "EIP4337"
+
+Gas
+ | Thirdweb Paymaster,
+ | Free on testnet (Starter plan), no
+
+Settlement asset
+ | sponsorGas: true
+Self-deployed Mock USDC
+ | card required
+Swap for real USDC address on
+
+Frontend
+ | (ERC-20, 6 decimals)
+Next.js + React + Thirdweb
+React SDK v5
+ | Mainnet cutover
+ConnectButton,
+useActiveAccount,
+
+Off-chain rate fallback
+ | open.er-api.com (free, no key)
+ | useReadContract
+Used only for INR, since no
+Chainlink feed exists
+
+Hosting
+ | Vercel or Netlify, free tier
+ |
+Source control
+ | GitHub
+ |
+Security requirements - ReentrancyGuard on all fund-moving functions onlyArbiter/onlyOwner modi-
+fiers on privileged actions - Hard-capped platform fee (3% ceiling in contract) - Static analysis (Slither/MythX)
+required before any mainnet deployment - External audit recommended before real funds are handled
+Performance requirements - All payment actions must be gasless from the user's perspective - Currency
+dashboard refresh interval: 30 seconds - Task visibility to freelancer must be near-instant (event-driven, not
+polling a database)
+2
+Deferred integrations (post-MVP, Phase 2+) - Thirdweb Universal Bridge/TransactionWidget for fiat
+and cross-chain-asset onramp - Transak Off-Ramp SDK for freelancer USDC bank account withdrawal -
+Superfluid for streaming payments - Polygon ID for compliance/tax routing
+
+3. App Flow Document
+Entry 1. Landing page → role picker: "I'm hiring" (Client) or "I'm working" (Freelancer) 2. Login via Gmail
+or email OTP  Thirdweb creates a smart wallet automatically, no gas token needed 3. Role choice stored
+against the wallet address for future logins
+Client path 4. Client dashboard loads "Browse freelancers" tab shows a static demo directory (name,
+skill tag, wallet address) 5. Client selects a freelancer, enters task title and USDC amount confirms
+createJob(...) is called, gas sponsored 6. Job appears in client's "My jobs" list with status Funded
+Freelancer path 7. Freelancer dashboard listens for JobCreated events where freelancer == myAddress
+new task appears automatically, no refresh needed 8. Freelancer completes the work externally, re-
+turns to the app, clicks "Submit work"
+submitWork(jobId) called status becomes Submitted, 24-hour
+countdown shown to both sides
+Review 9. Client sees the submission in a "Needs review" tab with two actions: Approve or Dispute
+Approve approveAndRelease (jobId) funds transfer immediately, status Released No action taken
+after 24 hours, claimAfterWindow (jobId) becomes callable (by the freelancer's own "Claim payment"
+button) status Released - Dispute raiseDispute (jobId) within the window status Disputed, funds
+frozen
+Dispute resolution 10. Internal admin/arbiter view lists all Disputed jobs arbiter calls resolveDispute (jobId,
+amountToFreelancer) funds split accordingly, status Released
+Currency dashboard (freelancer) 11. Freelancer's USDC balance shown at all times, converted live to
+INR (fallback API) and EUR (Chainlink oracle), refreshed every 30s, with an on-chain badge distinguishing
+the oracle-sourced figure
+Empty / error / success states - Empty: "No active jobs yet" (both dashboards), "No freelancers found"
+(browse tab) Error: wallet connect failure, insufficient USDC balance, transaction rejected, stale oracle
+data warning if updatedAt is old - Success: "Job funded", "Work submitted", "Payment released", "Dispute
+resolved"
+
+4. UI/UX Design Brief
+Design style: Clean, professional freelance-marketplace feel
+closer to Fiverr/Upwork than a crypto app.
+Blockchain terminology (wallet address, gas, transaction hash) is hidden by default; use plain language
+instead ("Payment secured", "Processing", "Paid").
+Color palette - Neutral base: white/light gray surfaces - One accent color for primary actions (teal or green,
+matching the "Gigly" name) - Status colors: green = released/success, amber = pending review, red/coral
+= disputed
+Typography: Clean modern sans-serif, consistent with contemporary SaaS dashboards. Sentence case
+throughout, no all-caps labels.
+Component style - Rounded cards (12px radius), soft 1px borders, no heavy shadows - Freelancer direc-
+tory: avatar circle + name + skill tag, Fiverr-style listing cards - Job status shown as a pill/badge (Funded,
+Submitted, Released, Disputed) with matching status color
+3
+Layout rules - Client dashboard: "Browse freelancers" / "My jobs" tabs - Freelancer dashboard: "Incoming
+tasks" / "Earnings" (currency dashboard) tabs - Metric cards at the top of each dashboard (active jobs, total
+earned, pending review) - Responsive grid, single-column stack on mobile
+Inspiration references: Fiverr and Upwork for the marketplace/card feel, Stripe's dashboard for a clean
+fintech tone.
+Overall UX principle: A user should be able to complete the entire flow funding a job, submitting work,
+getting paid
+without ever seeing the word "blockchain," a wallet address, or a gas fee.
+
+5. Backend Schema Document
+Gigly's MVP is deliberately on-chain-first- the smart contract is the source of truth for money and status.
+Off-chain storage is only for display metadata the chain doesn't need.
+On-chain state (smart contract)
+Job struct: | Field | Type | Notes ||-|-|-|| client | address | job creator || freelancer | address | assigned
+worker || amount | uint256 | total USDC locked (6 decimals) | | releasedAmount | uint256 | running total paid
+out | | submittedAt | uint256 | timestamp, starts the 24h timer || status | enum | None / Funded / Submitted /
+Disputed / Released / Refunded |
+Milestone struct (optional per job): amount, submitted, released, submittedAt
+Off-chain data (optional lightweight store e.g. Firestore or a flat JSON for the demo)
+users table | Column | Type | Notes ||  -|-|| wallet_address | string (PK) | matches on-chain
+client/freelancer address | | role | enum | client / freelancer || display_name | string ||| skill_tags | string[ |
+freelancer only || created_at | timestamp ||
+tasks table (supplementary metadata only - job amount/status always read from chain) | Column | Type
+| Notes ||-|-|-|| job_id | int (FK) | matches on-chain jobId || title | string ||| description | string |||
+created_at | timestamp ||
+disputes table (optional log, for the admin view) | Column | Type | Notes ||-|-|-|| job_id | int (FK) | ||
+raised_by | string | client wallet address || resolution_amount | uint256 | amount awarded to freelancer ||
+resolved_at | timestamp ||| arbiter_address | string ||
+Relationships: users.wallet_address is referenced by every on-chain job's client/freelancer field.
+tasks.job_id maps 1:1 to the on-chain jobId.
+Permissions & ownership: Job data (amounts, status) is immutable once on-chain and is the single source
+of truth. A user can only edit their own users row, gated by their authenticated wallet session. Task ti-
+tle/description are display-only convenience data, not authoritative.
+
+6. Implementation Plan
+Phase 0 Setup Create GitHub repo (/contracts, /frontend, /scripts) Initialize Hardhat, install
+OpenZeppelin + Chainlink packages - Create Thirdweb project, get client ID, enable testnet gas sponsorship
+- Get Amoy testnet MATIC from a faucet
+Phase 1-Smart contracts - Write MockUSDC.sol (mintable ERC-20, 6 decimals) - Write OptimisticEscrow.sol
+(createJob, submitWork, approveAndRelease, claimAfterWindow, raise Dispute, resolve Dispute, Chainlink
+price read helper) - Write unit tests using Hardhat's local network and built-in signer accounts - Deploy both
+contracts to Amoy, verify on Polygonscan
+4
+Phase 2 - Auth & wallet - Configure Thirdweb ConnectButton with Google + email in-app wallet, EIP4337
+execution mode, sponsorGas: true Build the post-login role picker (Client / Freelancer), persist choice
+per wallet address - Confirm a full gasless transaction works end-to-end before building further
+Phase 3 Client dashboard Static demo freelancer directory (card grid) "Fund a job" flow calling
+create Job - "My jobs" list, populated via JobCreated event filter on client == myAddress
+Phase 4 Freelancer dashboard "Incoming tasks" list via JobCreated event filter on freelancer ==
+myAddress - "Submit work" button calling submitWork - Currency dashboard: USDC balance + live Chainlink
+EUR/USD + fallback INR API, 30s refresh
+Phase 5 - Review & dispute flow Client "Needs review" tab: Approve / Dispute actions - Freelancer
+"Claim payment" button, enabled once the 24h window has passed - Internal admin/arbiter view listing dis-
+puted jobs with a resolve action
+Phase 6 Demo readiness - Seed script: mint Mock USDC to demo client wallet, pre-create 1-2 demo
+jobs - Ul cleanup: remove all raw addresses/hex, human-readable statuses only - Record a fallback demo
+video in case of live network issues
+Phase 7 - Post-hackathon / production (not required for demo) - Real fiat/crypto on-ramp via Thirdweb
+Bridge or Transak - Freelancer off-ramp via Transak Off-Ramp SDK - Soulbound reputation tokens on suc-
+cessful payout - Milestone + Superfluid streaming payments - Security audit (Slither/MythX, external review)
+- Mainnet cutover: swap RPC, USDC address, and Chainlink feed addresses via environment variables
+5
